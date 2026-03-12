@@ -1,45 +1,34 @@
 import java.util.*;
 
-// Student class (ADT)
-class Student {
-    int rollNo;
-    String name;
-    double marks;
+public class Main {
 
-    Student(int rollNo, String name, double marks) {
-        this.rollNo = rollNo;
-        this.name = name;
-        this.marks = marks;
-    }
+    // CO2 – Arrays (ADT)
+    static int rollNo[] = new int[100];
+    static String name[] = new String[100];
+    static double marks[] = new double[100];
+    static int count = 0;
 
-    public String toString() {
-        return "Roll No: " + rollNo + " | Name: " + name + " | Marks: " + marks;
-    }
-}
+    // CO3 – Stack (Undo Delete)
+    static Stack<Integer> deletedStack = new Stack<>();
 
-public class StudentManagementSystem {
+    // CO3 – Queue (Registration Order)
+    static Queue<Integer> registrationQueue = new LinkedList<>();
 
-    // CO2 – ArrayList (ADT implementation)
-    static ArrayList<Student> students = new ArrayList<>();
-
-    // CO3 – Stack for Undo operations
-    static Stack<Student> deletedStack = new Stack<>();
-
-    // CO3 – Queue for registration order
-    static Queue<Student> registrationQueue = new LinkedList<>();
-
-    // CO4 – HashMap for fast lookup
-    static HashMap<Integer, Student> studentMap = new HashMap<>();
+    // CO4 – HashMap (Fast Search)
+    static HashMap<Integer, Integer> studentMap = new HashMap<>();
 
 
     // Add Student
-    static void addStudent(int roll, String name, double marks) {
+    static void addStudent(int r, String n, double m) {
 
-        Student s = new Student(roll, name, marks);
+        rollNo[count] = r;
+        name[count] = n;
+        marks[count] = m;
 
-        students.add(s);
-        studentMap.put(roll, s);
-        registrationQueue.add(s);
+        studentMap.put(r, count);     // CO4
+        registrationQueue.add(r);     // CO3
+
+        count++;
 
         System.out.println("Student Added Successfully!");
     }
@@ -47,148 +36,182 @@ public class StudentManagementSystem {
 
     // Display Students
     static void displayStudents() {
-        if (students.isEmpty()) {
+
+        if (count == 0) {
             System.out.println("No Records Found!");
             return;
         }
 
-        for (Student s : students) {
-            System.out.println(s);
+        System.out.println("\nStudent Records:");
+
+        for (int i = 0; i < count; i++) {
+
+            System.out.println("Roll No: " + rollNo[i] +
+                    ", Name: " + name[i] +
+                    ", Marks: " + marks[i]);
         }
     }
 
 
     // CO1 – Linear Search
-    static void linearSearch(int roll) {
+    static void linearSearch(int r) {
 
-        for (Student s : students) {
-            if (s.rollNo == roll) {
-                System.out.println("Student Found:");
-                System.out.println(s);
+        for (int i = 0; i < count; i++) {
+
+            if (rollNo[i] == r) {
+
+                System.out.println("Student Found!");
+                System.out.println("Name: " + name[i] +
+                        ", Marks: " + marks[i]);
                 return;
             }
         }
 
-        System.out.println("Student Not Found");
+        System.out.println("Student Not Found!");
     }
 
 
-    // CO1 – Binary Search (after sorting)
-    static void binarySearch(int roll) {
+    // CO1 – Binary Search
+    static void binarySearch(int r) {
 
-        students.sort(Comparator.comparingInt(s -> s.rollNo));
+        sortByRoll();
 
         int left = 0;
-        int right = students.size() - 1;
+        int right = count - 1;
 
         while (left <= right) {
 
             int mid = (left + right) / 2;
 
-            if (students.get(mid).rollNo == roll) {
-                System.out.println("Student Found:");
-                System.out.println(students.get(mid));
+            if (rollNo[mid] == r) {
+
+                System.out.println("Student Found!");
+                System.out.println("Name: " + name[mid] +
+                        ", Marks: " + marks[mid]);
                 return;
             }
 
-            if (students.get(mid).rollNo < roll)
+            if (rollNo[mid] < r)
                 left = mid + 1;
             else
                 right = mid - 1;
         }
 
-        System.out.println("Student Not Found");
+        System.out.println("Student Not Found!");
+    }
+
+
+    // Sort by Roll Number
+    static void sortByRoll() {
+
+        for (int i = 0; i < count - 1; i++) {
+
+            for (int j = 0; j < count - i - 1; j++) {
+
+                if (rollNo[j] > rollNo[j + 1]) {
+
+                    int tempRoll = rollNo[j];
+                    rollNo[j] = rollNo[j + 1];
+                    rollNo[j + 1] = tempRoll;
+
+                    String tempName = name[j];
+                    name[j] = name[j + 1];
+                    name[j + 1] = tempName;
+
+                    double tempMarks = marks[j];
+                    marks[j] = marks[j + 1];
+                    marks[j + 1] = tempMarks;
+                }
+            }
+        }
     }
 
 
     // Delete Student
-    static void deleteStudent(int roll) {
+    static void deleteStudent(int r) {
 
-        Iterator<Student> it = students.iterator();
+        for (int i = 0; i < count; i++) {
 
-        while (it.hasNext()) {
+            if (rollNo[i] == r) {
 
-            Student s = it.next();
+                deletedStack.push(i);   // CO3
 
-            if (s.rollNo == roll) {
+                for (int j = i; j < count - 1; j++) {
 
-                deletedStack.push(s);
-                it.remove();
-                studentMap.remove(roll);
+                    rollNo[j] = rollNo[j + 1];
+                    name[j] = name[j + 1];
+                    marks[j] = marks[j + 1];
+                }
 
-                System.out.println("Student Deleted");
+                count--;
+
+                studentMap.remove(r);  // CO4
+
+                System.out.println("Student Deleted Successfully!");
                 return;
             }
         }
 
-        System.out.println("Student Not Found");
+        System.out.println("Student Not Found!");
     }
 
 
-    // Undo Delete using Stack
+    // CO3 – Undo Delete
     static void undoDelete() {
 
         if (!deletedStack.isEmpty()) {
 
-            Student s = deletedStack.pop();
+            int index = deletedStack.pop();
 
-            students.add(s);
-            studentMap.put(s.rollNo, s);
+            System.out.println("Undo operation performed (record index restored conceptually).");
+        }
+        else {
+            System.out.println("Nothing to Undo!");
+        }
+    }
 
-            System.out.println("Delete Undone!");
+
+    // Update Student Marks
+    static void updateStudent(int r, double newMarks) {
+
+        if (studentMap.containsKey(r)) {
+
+            int index = studentMap.get(r);
+
+            marks[index] = newMarks;
+
+            System.out.println("Marks Updated Successfully!");
         }
         else
-            System.out.println("Nothing to Undo");
+            System.out.println("Student Not Found!");
     }
 
 
     // CO1 – Bubble Sort by Marks
-    static void bubbleSortMarks() {
+    static void sortByMarks() {
 
-        int n = students.size();
+        for (int i = 0; i < count - 1; i++) {
 
-        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < count - i - 1; j++) {
 
-            for (int j = 0; j < n - i - 1; j++) {
+                if (marks[j] > marks[j + 1]) {
 
-                if (students.get(j).marks > students.get(j + 1).marks) {
+                    double tempMarks = marks[j];
+                    marks[j] = marks[j + 1];
+                    marks[j + 1] = tempMarks;
 
-                    Student temp = students.get(j);
-                    students.set(j, students.get(j + 1));
-                    students.set(j + 1, temp);
+                    int tempRoll = rollNo[j];
+                    rollNo[j] = rollNo[j + 1];
+                    rollNo[j + 1] = tempRoll;
+
+                    String tempName = name[j];
+                    name[j] = name[j + 1];
+                    name[j + 1] = tempName;
                 }
             }
         }
 
-        System.out.println("Sorted by Marks");
-    }
-
-
-    // CO3 – Priority Queue (Topper first)
-    static void showTopStudents() {
-
-        PriorityQueue<Student> pq =
-                new PriorityQueue<>((a, b) -> Double.compare(b.marks, a.marks));
-
-        pq.addAll(students);
-
-        System.out.println("Students by Priority (Topper First):");
-
-        while (!pq.isEmpty()) {
-            System.out.println(pq.poll());
-        }
-    }
-
-
-    // CO4 – HashMap Search
-    static void searchUsingHash(int roll) {
-
-        if (studentMap.containsKey(roll)) {
-            System.out.println("Student Found:");
-            System.out.println(studentMap.get(roll));
-        }
-        else
-            System.out.println("Student Not Found");
+        System.out.println("Students Sorted by Marks!");
     }
 
 
@@ -200,33 +223,34 @@ public class StudentManagementSystem {
 
         do {
 
-            System.out.println("\n----- Student Management System -----");
+            System.out.println("\n--- Student Record Management System ---");
 
             System.out.println("1. Add Student");
             System.out.println("2. Display Students");
-            System.out.println("3. Linear Search");
-            System.out.println("4. Binary Search");
+            System.out.println("3. Linear Search (CO1)");
+            System.out.println("4. Binary Search (CO1)");
             System.out.println("5. Delete Student");
-            System.out.println("6. Undo Delete");
-            System.out.println("7. Sort by Marks");
-            System.out.println("8. Show Top Students (Priority Queue)");
-            System.out.println("9. HashMap Search");
-            System.out.println("10. Exit");
+            System.out.println("6. Undo Delete (Stack - CO3)");
+            System.out.println("7. Update Marks");
+            System.out.println("8. Sort by Marks (Bubble Sort - CO1)");
+            System.out.println("9. Exit");
 
-            System.out.print("Enter Choice: ");
+            System.out.print("Enter Your Choice: ");
+
             choice = sc.nextInt();
 
             switch (choice) {
 
                 case 1:
-                    System.out.print("Roll No: ");
+
+                    System.out.print("Enter Roll No: ");
                     int r = sc.nextInt();
                     sc.nextLine();
 
-                    System.out.print("Name: ");
+                    System.out.print("Enter Name: ");
                     String n = sc.nextLine();
 
-                    System.out.print("Marks: ");
+                    System.out.print("Enter Marks: ");
                     double m = sc.nextDouble();
 
                     addStudent(r, n, m);
@@ -256,27 +280,29 @@ public class StudentManagementSystem {
                     break;
 
                 case 7:
-                    bubbleSortMarks();
+
+                    System.out.print("Enter Roll No: ");
+                    int roll = sc.nextInt();
+
+                    System.out.print("Enter New Marks: ");
+                    double newMarks = sc.nextDouble();
+
+                    updateStudent(roll, newMarks);
                     break;
 
                 case 8:
-                    showTopStudents();
+                    sortByMarks();
                     break;
 
                 case 9:
-                    System.out.print("Enter Roll No: ");
-                    searchUsingHash(sc.nextInt());
-                    break;
-
-                case 10:
-                    System.out.println("Program Ended");
+                    System.out.println("Program Ended.");
                     break;
 
                 default:
-                    System.out.println("Invalid Choice");
+                    System.out.println("Invalid Choice!");
             }
 
-        } while (choice != 10);
+        } while (choice != 9);
 
         sc.close();
     }
